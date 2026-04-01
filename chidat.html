@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Shop Điện Thoại</title>
+<style>
+body { font-family: Arial; margin:0; background:#f5f5f5; }
+header { background:#ffd400; padding:10px; }
+nav a { margin:10px; text-decoration:none; color:black; font-weight:bold; }
+.container { display:flex; }
+.sidebar { width:20%; background:#fff; padding:10px; }
+.content { width:80%; padding:10px; }
+.product {
+  background:#fff; padding:10px; margin:10px;
+  display:inline-block; width:200px; border-radius:5px;
+}
+button { padding:5px 10px; cursor:pointer; }
+input { padding:5px; margin:5px; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <nav>
+    <a onclick="home()">Trang chủ</a>
+    <a onclick="showCart()">Giỏ hàng</a>
+    <a onclick="login()">Đăng nhập</a>
+    <a onclick="register()">Đăng ký</a>
+    <a onclick="admin()">Admin</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="sidebar">
+    <h3>Danh mục</h3>
+    <p>Điện thoại</p>
+    <p>Phụ kiện</p>
+  </div>
+
+  <div class="content" id="app"></div>
+</div>
+
+<script>
+// ===== DATA =====
+let products = JSON.parse(localStorage.getItem("products")) || [
+ {id:1,name:"iPhone 13",price:20000000,desc:"Apple"},
+ {id:2,name:"Samsung S23",price:18000000,desc:"Samsung"},
+ {id:3,name:"Tai nghe",price:500000,desc:"Phụ kiện"}
+];
+
+let users = JSON.parse(localStorage.getItem("users")) || [
+ {username:"admin",password:"123",role:"admin"}
+];
+
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// ===== HOME =====
+function home(){
+ let html="<h2>Sản phẩm</h2>";
+ products.forEach(p=>{
+  html+=`
+  <div class="product">
+    <h4>${p.name}</h4>
+    <p>${p.price.toLocaleString()} VND</p>
+    <button onclick="detail(${p.id})">Xem</button>
+    <button onclick="addToCart(${p.id})">Mua</button>
+  </div>`;
+ });
+ document.getElementById("app").innerHTML=html;
+}
+
+// ===== DETAIL =====
+function detail(id){
+ let p = products.find(x=>x.id==id);
+ document.getElementById("app").innerHTML=`
+   <h2>${p.name}</h2>
+   <p>${p.desc}</p>
+   <p>${p.price.toLocaleString()} VND</p>
+   <button onclick="addToCart(${p.id})">Thêm vào giỏ</button>
+ `;
+}
+
+// ===== REGISTER =====
+function register(){
+ document.getElementById("app").innerHTML=`
+ <h2>Đăng ký</h2>
+ <input id="u" placeholder="Username"><br>
+ <input id="p" type="password" placeholder="Password"><br>
+ <button onclick="doRegister()">OK</button>
+ `;
+}
+
+function doRegister(){
+ users.push({username:u.value,password:p.value,role:"user"});
+ localStorage.setItem("users",JSON.stringify(users));
+ alert("OK");
+}
+
+// ===== LOGIN =====
+function login(){
+ document.getElementById("app").innerHTML=`
+ <h2>Đăng nhập</h2>
+ <input id="u"><br>
+ <input id="p" type="password"><br>
+ <button onclick="doLogin()">Login</button>
+ `;
+}
+
+function doLogin(){
+ let user = users.find(x=>x.username==u.value && x.password==p.value);
+ if(user){
+  localStorage.setItem("currentUser",JSON.stringify(user));
+  alert("Đăng nhập OK");
+ }else alert("Sai");
+}
+
+// ===== CART =====
+function addToCart(id){
+ cart.push(id);
+ localStorage.setItem("cart",JSON.stringify(cart));
+ alert("Đã thêm");
+}
+
+function showCart(){
+ let html="<h2>Giỏ hàng</h2>";
+ let total=0;
+ cart.forEach(id=>{
+  let p=products.find(x=>x.id==id);
+  total+=p.price;
+  html+=`<p>${p.name} - ${p.price}</p>`;
+ });
+ html+=`<h3>Tổng: ${total}</h3>`;
+ html+=`<button onclick="checkout()">Đặt hàng</button>`;
+ document.getElementById("app").innerHTML=html;
+}
+
+// ===== ORDER =====
+function checkout(){
+ let user=JSON.parse(localStorage.getItem("currentUser"));
+ if(!user){ alert("Đăng nhập đi"); return; }
+
+ orders.push({user:user.username,items:cart});
+ localStorage.setItem("orders",JSON.stringify(orders));
+ cart=[];
+ localStorage.removeItem("cart");
+
+ alert("Đặt hàng thành công");
+ home();
+}
+
+// ===== ADMIN =====
+function admin(){
+ let user=JSON.parse(localStorage.getItem("currentUser"));
+ if(!user || user.role!="admin"){
+  document.getElementById("app").innerHTML="Không có quyền";
+  return;
+ }
+
+ let html=`<h2>Admin</h2>
+
+ <h3>Thêm sản phẩm</h3>
+ <input id="name" placeholder="Tên">
+ <input id="price" placeholder="Giá">
+ <button onclick="addProduct()">Thêm</button>
+
+ <h3>Sản phẩm</h3>
+ `;
+
+ products.forEach(p=>{
+  html+=`<p>${p.name} - ${p.price}</p>`;
+ });
+
+ html+=`<h3>Đơn hàng</h3>`;
+ orders.forEach(o=>{
+  html+=`<p>${o.user} đặt ${o.items.length} sp</p>`;
+ });
+
+ document.getElementById("app").innerHTML=html;
+}
+
+function addProduct(){
+ products.push({
+  id:Date.now(),
+  name:name.value,
+  price:Number(price.value),
+  desc:""
+ });
+ localStorage.setItem("products",JSON.stringify(products));
+ alert("Đã thêm");
+ admin();
+}
+
+// START
+home();
+</script>
+
+</body>
+</html>
